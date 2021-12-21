@@ -1,4 +1,4 @@
-#include <LSM9DS0.hpp>
+#include <DroneAccelSensor.hpp>
 
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000); // id
 
