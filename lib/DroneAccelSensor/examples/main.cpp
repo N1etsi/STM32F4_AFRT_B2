@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <LSM9DS0.hpp>
+#include <DroneAccelSensor.hpp>
 
 /**************************************************************************/
 /*
