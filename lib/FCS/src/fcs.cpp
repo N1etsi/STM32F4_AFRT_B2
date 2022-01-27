@@ -58,9 +58,36 @@ void fcs::pid()
     outYaw = min(outYaw, (int32_t)400);
     outYaw = max(outYaw, (int32_t)-400);
 
-    fcs::mtout.escLFt = (uint32_t)min(max(throttle + outPitch - outRoll + outYaw, (uint32_t)1200), (uint32_t)1800);
-    fcs::mtout.escRFt = (uint32_t)min(max(throttle + outPitch + outRoll - outYaw, (uint32_t)1200), (uint32_t)1800);
-    fcs::mtout.escLBt = (uint32_t)min(max(throttle - outPitch - outRoll - outYaw, (uint32_t)1200), (uint32_t)1800);
-    fcs::mtout.escRBt = (uint32_t)min(max(throttle - outPitch + outRoll + outYaw, (uint32_t)1200), (uint32_t)1800);
+    if(fcs::mode != SHUT)
+    {
+        fcs::mtout.escLFt = (uint32_t)min(max(throttle + outPitch - outRoll + outYaw, (uint32_t)1200), (uint32_t)1800);
+        fcs::mtout.escRFt = (uint32_t)min(max(throttle + outPitch + outRoll - outYaw, (uint32_t)1200), (uint32_t)1800);
+        fcs::mtout.escLBt = (uint32_t)min(max(throttle - outPitch - outRoll - outYaw, (uint32_t)1200), (uint32_t)1800);
+        fcs::mtout.escRBt = (uint32_t)min(max(throttle - outPitch + outRoll + outYaw, (uint32_t)1200), (uint32_t)1800);
+    }
+    else{
+        fcs::mtout.escRFt = 1000;
+        fcs::mtout.escLBt = 1000;
+        fcs::mtout.escLFt = 1000;
+        fcs::mtout.escRBt = 1000;
+    }
+}
+
+void fcs::flight_mode()
+{
+    uint32_t control_channel = fcs::rxin.chArr[8];
+
+    if (control_channel < 1200)
+        fcs::mode = SHUT;
+    
+    else if (control_channel < 1700)
+        fcs::mode = AIR;
+
+    else if (control_channel < 2050)
+        fcs::mode = ALT;
+
+    else
+        fcs::mode = SHUT;
 
 }
+

@@ -22,7 +22,7 @@ void rxi::setup()
 void rxi::capture(void)
 {
     static volatile uint32_t rxCurr, rxPrev = 0, rxCH, chCounter=0;
-
+ 
     rxCurr = rx_tim->getCaptureCompare(channel);
     if (rxCurr > rxPrev)
         rxCH = rxCurr - rxPrev;
@@ -32,6 +32,11 @@ void rxi::capture(void)
     if (rxCH > 3000)
         chCounter = 0;
     fcs::rxin.chArr[chCounter] = rxCH;
+
+    if (chCounter == 8)
+        fcs::flight_mode();
+
+
     chCounter++;
 
 }

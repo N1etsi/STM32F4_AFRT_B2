@@ -14,33 +14,33 @@ namespace fcs
     #define Ya 2
 
     //MODES
-    #define STDBY -10
-    #define GND 0
-    #define AIR 1
-    #define SHUT -5
+    #define AIR 0
+    #define ALT 1
+    #define SHUT 255
 
 
     #define nCh 8
 
     //PID Const
-    #define rollP 1.3
-    #define pitchP 1.3
+    #define rollP 5
+    #define pitchP 5
     #define yawP 0.2
 
 
-    #define rollI 0.05
-    #define pitchI 0.05
+    #define rollI 0.00
+    #define pitchI 0.00
     #define yawI 0
 
-    #define rollD 15.0
-    #define pitchD 15.0
-    #define yawD 5.0
+    #define rollD 0
+    #define pitchD 0.0
+    #define yawD 0.0
 
     typedef struct State {
         float yaw;
         float roll;
         float pitch;
         float dist;
+        float alti; //from the pressure sensor
     }State;
 
     typedef struct RXIN {
@@ -52,11 +52,13 @@ namespace fcs
         uint32_t escLFt, escLBt, escRFt, escRBt;
     } MTOUT;
 
-    inline State state = {0.0, 0.0, 0.0};
+    inline State state = {0.0, 0.0, 0.0, 0.0, 0.0};
     inline RXIN rxin;
-    inline MTOUT mtout;
+    inline MTOUT mtout = {0, 0, 0, 0};
+    inline volatile byte mode = SHUT;
 
     void pid();
+    void flight_mode();
 
 
 

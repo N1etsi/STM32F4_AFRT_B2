@@ -1,13 +1,14 @@
 #include <motor.hpp>
 
-using namespace mtout;
+using namespace mto;
 
-void mtout::setup()
+void mto::setup()
 {
+    #define RB PA5
     #define LF PA8 
     #define RF PA9
     #define LB PA10
-    #define RB PA11
+    
 
     TIM_TypeDef *Instance1 = (TIM_TypeDef *)pinmap_peripheral(digitalPinToPinName(LF), PinMap_PWM);
     channel1 = STM_PIN_CHANNEL(pinmap_function(digitalPinToPinName(LF), PinMap_PWM));
@@ -28,17 +29,37 @@ void mtout::setup()
 
     float freq = 4000;
     
-    MyTimLF->setPWM(channel1, LF, freq, 45);
-    MyTimRF->setPWM(channel2, RF, freq, 45);
-    MyTimLB->setPWM(channel3, LB, freq, 45);
-    MyTimRB->setPWM(channel4, RB, freq, 45);
+    MyTimLF->setPWM(channel1, LF, freq, 49);
+    MyTimRF->setPWM(channel2, RF, freq, 49);
+    MyTimLB->setPWM(channel3, LB, freq, 49);
+    MyTimRB->setPWM(channel4, RB, freq, 49);
 }
 
-void mtout::output()
+void mto::output()
 {
-    MyTimLF->setCaptureCompare(channel1, fcs::mtout.escLFt);
-    MyTimRF->setCaptureCompare(channel2, fcs::mtout.escRFt);
-    MyTimLB->setCaptureCompare(channel3, fcs::mtout.escLBt);
-    MyTimRB->setCaptureCompare(channel4, fcs::mtout.escRBt);
+     Serial.print("  Motor LF: ");
+    Serial.print(fcs::mtout.escLFt);
+    Serial.print("  Motor RF: ");
+    Serial.print(fcs::mtout.escRFt);
+    Serial.print("  Motor LB: ");
+    Serial.print(fcs::mtout.escLBt); 
+    Serial.print("  Motor RB: ");
+    Serial.println(fcs::mtout.escRBt);
+    
+    if(fcs::mode != SHUT)
+    {
+        MyTimLF->setCaptureCompare(channel1, 160, MICROSEC_COMPARE_FORMAT);
+        MyTimRF->setCaptureCompare(channel2, int(fcs::mtout.escRFt/8), MICROSEC_COMPARE_FORMAT);
+        MyTimLB->setCaptureCompare(channel3, 160, MICROSEC_COMPARE_FORMAT);
+        MyTimRB->setCaptureCompare(channel4, int(fcs::mtout.escRBt/8), MICROSEC_COMPARE_FORMAT);
+    }
+    else
+    {
+        MyTimLF->setCaptureCompare(channel1, 49, PERCENT_COMPARE_FORMAT);
+        MyTimRF->setCaptureCompare(channel2, 49, PERCENT_COMPARE_FORMAT);
+        MyTimLB->setCaptureCompare(channel3, 49, PERCENT_COMPARE_FORMAT);
+        MyTimRB->setCaptureCompare(channel4, 49, PERCENT_COMPARE_FORMAT);
+    }
+    
     
 }
