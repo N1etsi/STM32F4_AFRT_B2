@@ -46,7 +46,7 @@ void mto::output()
     Serial.print("  Motor RB: ");
     Serial.println(fcs::mtout.escRBt);
     
-    if(fcs::mode != SHUT)
+    if((fcs::mode != SHUT) && (!fcs::kill))
     {
         MyTimLF->setCaptureCompare(channel1, 160, MICROSEC_COMPARE_FORMAT);
         MyTimRF->setCaptureCompare(channel2, int(fcs::mtout.escRFt/8), MICROSEC_COMPARE_FORMAT);

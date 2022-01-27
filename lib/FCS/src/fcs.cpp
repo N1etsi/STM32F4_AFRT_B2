@@ -11,6 +11,8 @@ void fcs::pid(bool doHeightPID)
     static float errRoll = 0, memRoll = 0, lastRoll = 0;
     static float errPitch = 0, memPitch = 0, lastPitch = 0;
     static float errYaw = 0, memYaw = 0, lastYaw = 0;
+    int check_rxin = 0, last_rxin = 0, count = 0;
+
 
     spRoll = (float)(fcs::rxin.chArr[1]-1500) / 15.0;
     spPitch = -1.0 * ((float)fcs::rxin.chArr[2]-1500) / 15.0;
@@ -58,7 +60,27 @@ void fcs::pid(bool doHeightPID)
     outYaw = min(outYaw, (int32_t)400);
     outYaw = max(outYaw, (int32_t)-400);
 
-    if(fcs::mode != SHUT)
+
+    //Emergency kill
+    if( (abs(fcs::state.roll)>60)  || (abs(fcs::state.pitch)>60) )
+        fcs::kill=true;
+
+    while(check_rxin == last_rxin){
+        last_rxin = check_rxin;
+        check_rxin = 0;
+        for (int i=1; i<9; i++) {
+            check_rxin= check_rxin + fcs::rxin.chArr[i];
+        }
+        count++;
+        if (count>10)
+            fcs::kill=true;
+    }
+   
+
+
+
+
+    if((fcs::mode != SHUT) && (!fcs::kill))
     {
         fcs::mtout.escLFt = (uint32_t)min(max(throttle + outPitch - outRoll + outYaw, (uint32_t)1200), (uint32_t)1800);
         fcs::mtout.escRFt = (uint32_t)min(max(throttle + outPitch + outRoll - outYaw, (uint32_t)1200), (uint32_t)1800);

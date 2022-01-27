@@ -56,6 +56,7 @@ namespace fcs
     inline RXIN rxin;
     inline MTOUT mtout = {0, 0, 0, 0};
     inline volatile byte mode = SHUT;
+    inline volatile byte kill = false;
 
     void pid(bool doHeightPID);
     void flight_mode();
