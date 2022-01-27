@@ -25,15 +25,19 @@ namespace fcs
     #define rollP 5
     #define pitchP 5
     #define yawP 0.2
+    #define distP 0
 
 
     #define rollI 0.00
     #define pitchI 0.00
     #define yawI 0
+    #define distI 0
 
     #define rollD 0
     #define pitchD 0.0
     #define yawD 0.0
+    #define distD 0
+
 
     typedef struct State {
         float yaw;
@@ -57,6 +61,7 @@ namespace fcs
     inline MTOUT mtout = {0, 0, 0, 0};
     inline volatile byte mode = SHUT;
     inline volatile byte kill = false;
+    inline volatile float read_dist;
 
     void pid(bool doHeightPID);
     void flight_mode();

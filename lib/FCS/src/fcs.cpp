@@ -6,11 +6,12 @@ using namespace fcs;
 
 void fcs::pid(bool doHeightPID)
 {
-    static float spRoll, spPitch, spYaw;
+    static float spRoll, spPitch, spYaw , spDist;
     uint32_t throttle = fcs::rxin.chArr[3];
     static float errRoll = 0, memRoll = 0, lastRoll = 0;
     static float errPitch = 0, memPitch = 0, lastPitch = 0;
     static float errYaw = 0, memYaw = 0, lastYaw = 0;
+    static float errDist = 0, memDist = 0, lastDist = 0;
     int check_rxin = 0, last_rxin = 0, count = 0;
 
 
@@ -61,6 +62,27 @@ void fcs::pid(bool doHeightPID)
     outYaw = max(outYaw, (int32_t)-400);
 
 
+
+
+    //pid height ( se for para implementar acho que no output dos motores temos de subtrair)
+    int32_t outDist = 0;
+    if (doHeightPID){
+        float Dist = fcs::state.dist;
+
+        errDist = Dist - spDist;
+        memDist += errDist;
+        outDist = distP*errDist + distI*memDist + distD*(errDist-lastDist);
+        lastDist = errDist;
+
+        outDist = min(outDist, (int32_t)400);
+        outDist = max(outDist, (int32_t)-400);
+
+    }
+
+
+
+
+
     //Emergency kill
     if( (abs(fcs::state.roll)>60)  || (abs(fcs::state.pitch)>60) )
         fcs::kill=true;
@@ -72,7 +94,7 @@ void fcs::pid(bool doHeightPID)
             check_rxin= check_rxin + fcs::rxin.chArr[i];
         }
         count++;
-        if (count>10){
+        if (count>500){
             fcs::kill=true;
             break;
         }
