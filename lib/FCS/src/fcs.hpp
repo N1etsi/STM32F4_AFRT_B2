@@ -57,7 +57,7 @@ namespace fcs
     inline MTOUT mtout = {0, 0, 0, 0};
     inline volatile byte mode = SHUT;
 
-    void pid();
+    void pid(bool doHeightPID);
     void flight_mode();
 
 

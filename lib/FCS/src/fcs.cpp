@@ -4,7 +4,7 @@
 
 using namespace fcs;
 
-void fcs::pid()
+void fcs::pid(bool doHeightPID)
 {
     static float spRoll, spPitch, spYaw;
     uint32_t throttle = fcs::rxin.chArr[3];
@@ -70,6 +70,10 @@ void fcs::pid()
         fcs::mtout.escLBt = 1000;
         fcs::mtout.escLFt = 1000;
         fcs::mtout.escRBt = 1000;
+    }
+
+    if (doHeightPID) {
+        /* TOOD: pid */
     }
 }
 
