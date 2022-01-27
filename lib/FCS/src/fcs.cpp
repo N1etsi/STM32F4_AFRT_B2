@@ -72,8 +72,10 @@ void fcs::pid(bool doHeightPID)
             check_rxin= check_rxin + fcs::rxin.chArr[i];
         }
         count++;
-        if (count>10)
+        if (count>10){
             fcs::kill=true;
+            break;
+        }
     }
    
 
