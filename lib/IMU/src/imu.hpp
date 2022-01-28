@@ -17,12 +17,12 @@ namespace imu
     #define LSM9DS0_G   0x6B // Would be 0x6A if SDO_G is LOW
     // global constants for 9 DoF fusion and AHRS (Attitude and Heading Reference System)
     #define GyroMeasError PI * (40.0f / 180.0f)       // gyroscope measurement error in rads/s (shown as 3 deg/s)
-    #define GyroMeasDrift PI * (0.0f / 180.0f)      // gyroscope measurement drift in rad/s/s (shown as 0.0 deg/s/s)
+    #define GyroMeasDrift PI * (1.0f / 180.0f)      // gyroscope measurement drift in rad/s/s (shown as 0.0 deg/s/s)
 
     #define beta sqrt(3.0f / 4.0f) * GyroMeasError   // compute beta
     #define zeta sqrt(3.0f / 4.0f) * GyroMeasDrift   // compute zeta, the other free parameter in the Madgwick scheme usually set to a small or zero value
     #define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
-    #define Ki 0.0f
+    #define Ki 0.00f
     
 
     //Init sensor object
@@ -46,7 +46,9 @@ namespace imu
     fcs::State getAHRS();
     void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
     void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
+    void MadgwickQuaternion(float ax, float ay, float az, float gx, float gy, float gz);
     void calcOffsets(int iter);
+    float invSqrt(float x);
 
 }
 

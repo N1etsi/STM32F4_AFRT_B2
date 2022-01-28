@@ -17,24 +17,25 @@ namespace fcs
     #define AIR 0
     #define ALT 1
     #define SHUT 255
+    
 
 
     #define nCh 8
 
     //PID Const
-    #define rollP 5
-    #define pitchP 5
-    #define yawP 0.2
+    #define rollP 25.0
+    #define pitchP rollP
+    #define yawP 0
     #define distP 0
 
 
     #define rollI 0.00
-    #define pitchI 0.00
-    #define yawI 0
+    #define pitchI rollI
+    #define yawI 0.0
     #define distI 0
 
-    #define rollD 0
-    #define pitchD 0.0
+    #define rollD 55.0
+    #define pitchD rollD
     #define yawD 0.0
     #define distD 0
 

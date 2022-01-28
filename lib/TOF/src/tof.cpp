@@ -22,8 +22,9 @@ void tof::read()
         count=0;
     }else
         count++;
-
+    /*
     if (count>200)
         fcs::kill = true;
+        */
     
 }

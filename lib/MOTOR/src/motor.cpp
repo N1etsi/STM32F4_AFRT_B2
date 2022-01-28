@@ -4,10 +4,11 @@ using namespace mto;
 
 void mto::setup()
 {
-    #define RB PA5
+    
     #define LF PA8 
     #define RF PA9
     #define LB PA10
+    #define RB PA5
     
 
     TIM_TypeDef *Instance1 = (TIM_TypeDef *)pinmap_peripheral(digitalPinToPinName(LF), PinMap_PWM);
@@ -37,20 +38,12 @@ void mto::setup()
 
 void mto::output()
 {
-     Serial.print("  Motor LF: ");
-    Serial.print(fcs::mtout.escLFt);
-    Serial.print("  Motor RF: ");
-    Serial.print(fcs::mtout.escRFt);
-    Serial.print("  Motor LB: ");
-    Serial.print(fcs::mtout.escLBt); 
-    Serial.print("  Motor RB: ");
-    Serial.println(fcs::mtout.escRBt);
-    
+   
     if((fcs::mode != SHUT) && (!fcs::kill))
     {
-        MyTimLF->setCaptureCompare(channel1, 160, MICROSEC_COMPARE_FORMAT);
+        MyTimLF->setCaptureCompare(channel1, int(fcs::mtout.escLFt/8), MICROSEC_COMPARE_FORMAT);
         MyTimRF->setCaptureCompare(channel2, int(fcs::mtout.escRFt/8), MICROSEC_COMPARE_FORMAT);
-        MyTimLB->setCaptureCompare(channel3, 160, MICROSEC_COMPARE_FORMAT);
+        MyTimLB->setCaptureCompare(channel3, int(fcs::mtout.escLBt/8), MICROSEC_COMPARE_FORMAT);
         MyTimRB->setCaptureCompare(channel4, int(fcs::mtout.escRBt/8), MICROSEC_COMPARE_FORMAT);
     }
     else

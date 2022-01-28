@@ -8,11 +8,15 @@ int imu::setup()
     dof.setAccelScale(dof.A_SCALE_2G);
     dof.setGyroScale(dof.G_SCALE_245DPS);
     dof.setMagScale(dof.M_SCALE_2GS);
-    dof.setAccelODR(dof.A_ODR_200);
+    dof.setAccelODR(dof.A_ODR_800);
     dof.setAccelABW(dof.A_ABW_50);
-    dof.setGyroODR(dof.G_ODR_190_BW_125);
-    dof.setMagODR(dof.M_ODR_125);
+    dof.setGyroODR(dof.G_ODR_760_BW_30);
+    dof.setMagODR(dof.M_ODR_50);
+    delay(500);
+    // dof.calLSM9DS0(gbias, abias); 
+    imu::calcOffsets(200);
     dof.calLSM9DS0(gbias, abias);
+    
 
     return 1;
 }
@@ -34,14 +38,14 @@ fcs::State imu::getAHRS()
     my = dof.calcMag(dof.my);
     mz = dof.calcMag(dof.mz);
 
-
-
     Now = micros();
     deltat = ((Now - lastUpdate)/1000000.0f);
     lastUpdate = Now;
 
     MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
+    MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
     //MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
+    //MadgwickQuaternion(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0);
 
     //Quaternion to Euler conversion
     fcs::state.yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
@@ -51,6 +55,7 @@ fcs::State imu::getAHRS()
     fcs::state.yaw   *= 180.0f / PI; 
     fcs::state.yaw   -= 1.52; // Declination at Porto, Portugal is 1 degrees 31 minutes 2021-01
     fcs::state.roll  *= 180.0f / PI;
+    fcs::state.roll += 8.3;
 
     return fcs::state;
 }
@@ -240,6 +245,99 @@ q[3] = q4 * norm;
 
 }
 
+void imu::MadgwickQuaternion(float ax, float ay, float az, float gx, float gy, float gz)
+{
+    static float invSampleFreq = 1.0/1000.0;
+    float q0 = q[0], q1 = q[1], q2 = q[2], q3 = q[3];
+    float recipNorm;
+	float s0, s1, s2, s3;
+	float qDot1, qDot2, qDot3, qDot4;
+	float _2q0, _2q1, _2q2, _2q3, _4q0, _4q1, _4q2 ,_8q1, _8q2, q0q0, q1q1, q2q2, q3q3;
+
+	// Convert gyroscope degrees/sec to radians/sec
+	gx *= 0.0174533f;
+	gy *= 0.0174533f;
+	gz *= 0.0174533f;
+
+	// Rate of change of quaternion from gyroscope
+	qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
+	qDot2 = 0.5f * (q0 * gx + q2 * gz - q3 * gy);
+	qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
+	qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
+
+	// Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
+	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+
+		// Normalise accelerometer measurement
+		recipNorm = invSqrt(ax * ax + ay * ay + az * az);
+		ax *= recipNorm;
+		ay *= recipNorm;
+		az *= recipNorm;
+
+		// Auxiliary variables to avoid repeated arithmetic
+		_2q0 = 2.0f * q0;
+		_2q1 = 2.0f * q1;
+		_2q2 = 2.0f * q2;
+		_2q3 = 2.0f * q3;
+		_4q0 = 4.0f * q0;
+		_4q1 = 4.0f * q1;
+		_4q2 = 4.0f * q2;
+		_8q1 = 8.0f * q1;
+		_8q2 = 8.0f * q2;
+		q0q0 = q0 * q0;
+		q1q1 = q1 * q1;
+		q2q2 = q2 * q2;
+		q3q3 = q3 * q3;
+
+		// Gradient decent algorithm corrective step
+		s0 = _4q0 * q2q2 + _2q2 * ax + _4q0 * q1q1 - _2q1 * ay;
+		s1 = _4q1 * q3q3 - _2q3 * ax + 4.0f * q0q0 * q1 - _2q0 * ay - _4q1 + _8q1 * q1q1 + _8q1 * q2q2 + _4q1 * az;
+		s2 = 4.0f * q0q0 * q2 + _2q0 * ax + _4q2 * q3q3 - _2q3 * ay - _4q2 + _8q2 * q1q1 + _8q2 * q2q2 + _4q2 * az;
+		s3 = 4.0f * q1q1 * q3 - _2q1 * ax + 4.0f * q2q2 * q3 - _2q2 * ay;
+		recipNorm = invSqrt(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); // normalise step magnitude
+		s0 *= recipNorm;
+		s1 *= recipNorm;
+		s2 *= recipNorm;
+		s3 *= recipNorm;
+
+		// Apply feedback step
+		qDot1 -= beta * s0;
+		qDot2 -= beta * s1;
+		qDot3 -= beta * s2;
+		qDot4 -= beta * s3;
+	}
+
+	// Integrate rate of change of quaternion to yield quaternion
+	q0 += qDot1 * invSampleFreq;
+	q1 += qDot2 * invSampleFreq;
+	q2 += qDot3 * invSampleFreq;
+	q3 += qDot4 * invSampleFreq;
+
+	// Normalise quaternion
+	recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+	q0 *= recipNorm;
+	q1 *= recipNorm;
+	q2 *= recipNorm;
+	q3 *= recipNorm;
+
+    q[0] = q0;
+    q[1] = q1; 
+    q[2] = q2; 
+    q[3] = q3;
+
+}
+
+float imu::invSqrt(float x) {
+	float halfx = 0.5f * x;
+	float y = x;
+	long i = *(long*)&y;
+	i = 0x5f3759df - (i>>1);
+	y = *(float*)&i;
+	y = y * (1.5f - (halfx * y * y));
+	y = y * (1.5f - (halfx * y * y));
+	return y;
+}
+
 void imu::calcOffsets(int iter)
 {
     while (status == -1)
@@ -253,8 +351,9 @@ void imu::calcOffsets(int iter)
     bias[4] = 0.0;
     bias[5] = 0.0;
 
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 200; i++)
         getAHRS();
+
 
     for (int i = 0; i < iter; i++)
     {
@@ -265,16 +364,15 @@ void imu::calcOffsets(int iter)
         bias[3] += gx;
         bias[4] += gy;
         bias[5] += gz;
-
-        abias[X] = bias[0] / iter;
-        abias[Y] = bias[1] / iter;
-        abias[Z] = bias[2] / iter;
-        abias[Z] -= 1.0f; // Since we don't want to cancel out Gravity in the bias
-
-        gbias[X] = bias[3] / iter;
-        gbias[Y] = bias[4] / iter;
-        gbias[Z] = bias[5] / iter;
         
     }
+    abias[X] = bias[0] / iter;
+    abias[Y] = bias[1] / iter;
+    abias[Z] = bias[2] / iter;
+    abias[Z] -= 1.0f; // Since we don't want to cancel out Gravity in the bias
+
+    gbias[X] = bias[3] / iter;
+    gbias[Y] = bias[4] / iter;
+    gbias[Z] = bias[5] / iter;
 
 }

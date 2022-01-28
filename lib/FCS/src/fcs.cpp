@@ -28,6 +28,15 @@ void fcs::pid(bool doHeightPID)
             spYaw += 360.0;
 
     }
+
+    if(fcs::mode == SHUT)
+    {
+        spYaw = fcs::state.yaw;
+    }
+
+
+
+
     float roll = fcs::state.roll;
     float pitch = fcs::state.pitch;
     float yaw = fcs::state.yaw;
@@ -54,7 +63,9 @@ void fcs::pid(bool doHeightPID)
 
     //PID Yaw
     errYaw = yaw - spYaw;
+    if(abs(errYaw) > 180 ) errYaw *= -1;
     memYaw += errYaw;
+
     outYaw = yawP*errYaw + yawI*memYaw + yawD*(errYaw-lastYaw);
     lastYaw = errYaw;
 
@@ -79,14 +90,11 @@ void fcs::pid(bool doHeightPID)
 
     }
 
-
-
-
-
+    /*
     //Emergency kill
     if( (abs(fcs::state.roll)>60)  || (abs(fcs::state.pitch)>60) )
         fcs::kill=true;
-
+    
     while(check_rxin == last_rxin){
         last_rxin = check_rxin;
         check_rxin = 0;
@@ -99,24 +107,27 @@ void fcs::pid(bool doHeightPID)
             break;
         }
     }
-   
-
-
+    */   
 
 
     if((fcs::mode != SHUT) && (!fcs::kill))
     {
-        fcs::mtout.escLFt = (uint32_t)min(max(throttle + outPitch - outRoll + outYaw, (uint32_t)1200), (uint32_t)1800);
-        fcs::mtout.escRFt = (uint32_t)min(max(throttle + outPitch + outRoll - outYaw, (uint32_t)1200), (uint32_t)1800);
-        fcs::mtout.escLBt = (uint32_t)min(max(throttle - outPitch - outRoll - outYaw, (uint32_t)1200), (uint32_t)1800);
-        fcs::mtout.escRBt = (uint32_t)min(max(throttle - outPitch + outRoll + outYaw, (uint32_t)1200), (uint32_t)1800);
+        fcs::mtout.escLFt = (uint32_t)min(max(throttle + outPitch - outRoll - outYaw, (uint32_t)1150), (uint32_t)1800);
+        fcs::mtout.escRFt = (uint32_t)min(max(throttle + outPitch + outRoll + outYaw, (uint32_t)1150), (uint32_t)1800);
+        fcs::mtout.escLBt = (uint32_t)min(max(throttle - outPitch - outRoll + outYaw, (uint32_t)1150), (uint32_t)1800);
+        fcs::mtout.escRBt = (uint32_t)min(max(throttle - outPitch + outRoll - outYaw, (uint32_t)1150), (uint32_t)1800);
     }
     else{
         fcs::mtout.escRFt = 1000;
         fcs::mtout.escLBt = 1000;
         fcs::mtout.escLFt = 1000;
         fcs::mtout.escRBt = 1000;
+        memPitch = 0;
+        memRoll = 0;
+        memYaw = 0;
     }
+
+    
 
     if (doHeightPID) {
         /* TOOD: pid */

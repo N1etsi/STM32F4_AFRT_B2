@@ -2,7 +2,7 @@
 #include <STM32TimerInterrupt.h>
 #include <Wire.h>
 
-#define DEBUGs
+#define DEBUG
 #include <fcs.hpp>
 #include <imu.hpp>
 #include <tof.hpp>
@@ -12,12 +12,13 @@
   #include <motor.hpp>
 #endif
 
-#define INTERRUPT_INTERVAL_US 1*1000 // half sec
-#define SERIAL_BAUD 115200
+#define INTERRUPT_INTERVAL_US 1*1000 
+#define SERIAL_BAUD 128000
 #define DO_HEIGHT_PID true
 #define DONT_DO_HEIGHT_PID false
 #define LED1 2
 void printSt();
+int fcsSetup();
 
 
 volatile int syncFlag0 = 0;
@@ -33,14 +34,20 @@ void sync(void) {
 
 void microCycle1(){
   fcs::pid(DO_HEIGHT_PID);
+  #ifndef DEBUG
+
   mto::output();
+#endif
   imu::getAHRS();
 
 }
 
 void microCycle2(){
   fcs::pid(DONT_DO_HEIGHT_PID);
+  #ifndef DEBUG
+
   mto::output();
+#endif
   tof::read();
   imu::getAHRS();
 
@@ -48,7 +55,9 @@ void microCycle2(){
 
 void microCycle3(){
   fcs::pid(DONT_DO_HEIGHT_PID);
-  mto::output();
+  #ifndef DEBUG
+    mto::output();
+  #endif
   bmp::read();
   imu::getAHRS();
 
@@ -56,9 +65,11 @@ void microCycle3(){
 
 void setup() {
   //init sensors
+  delay(3000);
   imu::setup();
   tof::setup(0);
   bmp::setup();
+  rxi::setup();
   
   #ifdef DEBUG
     Serial.begin(SERIAL_BAUD);
@@ -66,84 +77,75 @@ void setup() {
     mto::setup();
   #endif
 
-  rxi::setup();
-
   Wire.setClock(1000000);
   ITimer0.attachInterruptInterval(INTERRUPT_INTERVAL_US, TimerHandler0); 
 
-  delay(5000);
+  delay(3000);
+
+   while(!fcsSetup());
 }
 
-// void loopaaa() {
-//   // put your main code here, to run repeatedly:
-
-//   static uint32_t t, t2, t3, t4, t5;
-//   t = micros();
-//   imu::getAHRS();
-//   t2 = micros() - t;
-//   tof::read();
-//   t3 = micros() - t2 - t;
-//   bmp::read();
-//   t4 = micros() - t3 - t2 - t;
-//   fcs::pid(DO_HEIGHT_PID);
-//   t5 =micros() - t4 - t3 - t2 - t; 
-
-//   #ifndef DEBUGS
-//     mto::output();
-//   #else
-//     printSt();
-//   #endif
-// }
 
 void loop() {
-  static uint32_t t, t1, t2, t3, t4, t5;
+  static uint32_t t = 0, t1;
+
   t = micros();
   microCycle1(); 
-  t1 = micros();
   sync();
-  t2 = micros();
   microCycle2(); 
-  t3 = micros();
   sync();
-  t4 = micros();
-  microCycle3(); 
-  t5 = micros();
+  microCycle3();   
+  printSt();
   sync();
-
+  /*
+  t1 = micros();
+  Serial.print("T: ");
   Serial.print(t1-t);
-  Serial.print("  ");
-  Serial.print(t3-t2);
-  Serial.print("  ");
-  Serial.print(t5-t4);
-  Serial.print("\n");
+  */
+
 }
 
 void printSt() {
-  Serial.print("Roll: ");
+  Serial.print(" ,Roll: ");
   Serial.print(fcs::state.roll);
-  Serial.print("  Pitch: ");
+  Serial.print("  ,Pitch: ");
   Serial.print(fcs::state.pitch);
-  Serial.print("  Yaw: ");
+  Serial.print("  ,Yaw: ");
   Serial.print(fcs::state.yaw);
-  Serial.print("  Dist: ");
+  Serial.print("  ,Dist: ");
   Serial.print(fcs::state.dist);
-  Serial.print("  Alt: ");
+  Serial.print("  ,Alt: ");
   Serial.print(fcs::state.alti);
   
-  Serial.print("  Motor LF: ");
+  
+  Serial.print("  ,Motor LF: ");
   Serial.print(fcs::mtout.escLFt);
-  Serial.print("  Motor RF: ");
+  Serial.print("  ,Motor RF: ");
   Serial.print(fcs::mtout.escRFt);
-  Serial.print("  Motor LB: ");
+  Serial.print(" ,Motor LB: ");
   Serial.print(fcs::mtout.escLBt); 
-  Serial.print("  Motor RB: ");
+  Serial.print(" ,Motor RB: ");
   Serial.print(fcs::mtout.escRBt);
-  Serial.print("  CH3: ");
+  Serial.print(" ,CH3: ");
   Serial.print(fcs::rxin.chArr[3]);
-  Serial.print("  CH8: ");
+  Serial.print("  ,CH8: ");
   Serial.print(fcs::rxin.chArr[8]);
-  Serial.print("  mode: ");
+  Serial.print("  ,mode: ");
   Serial.print(fcs::mode);
+  
 
   Serial.println();
+}
+
+int fcsSetup()
+{
+  for (int i=0; i<100; i++)
+  {
+    tof::read();
+    imu::getAHRS();
+    bmp::read();
+  }
+
+  return 1;
+
 }

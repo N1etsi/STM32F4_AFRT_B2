@@ -16,7 +16,6 @@ namespace mto {
 
     void setup();
     void output();
-    void outputKill();
 
 }
 
